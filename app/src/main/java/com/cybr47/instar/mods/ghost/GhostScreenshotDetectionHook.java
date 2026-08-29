@@ -1,0 +1,90 @@
+package com.cybr47.instar.mods.ghost;
+
+import org.luckypray.dexkit.DexKitBridge;
+import org.luckypray.dexkit.query.FindClass;
+import org.luckypray.dexkit.query.FindMethod;
+import org.luckypray.dexkit.query.matchers.ClassMatcher;
+import org.luckypray.dexkit.query.matchers.MethodMatcher;
+import org.luckypray.dexkit.result.ClassData;
+import org.luckypray.dexkit.result.ClassDataList;
+import org.luckypray.dexkit.result.MethodData;
+
+import java.lang.reflect.Method;
+import java.util.List;
+
+import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedBridge;
+import com.cybr47.instar.Xposed.Module;
+import com.cybr47.instar.utils.core.DexKitCache;
+import com.cybr47.instar.utils.feature.FeatureFlags;
+import com.cybr47.instar.utils.feature.FeatureStatusTracker;
+import com.cybr47.instar.utils.log.ModuleLog;
+
+public class GhostScreenshotDetectionHook {
+
+    public void handleScreenshotBlock(DexKitBridge bridge) {
+        XC_MethodHook hook = new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                if (FeatureFlags.isGhostScreenshot) param.setResult(null);
+            }
+        };
+
+        if (DexKitCache.isCacheValid()) {
+            Method cached = DexKitCache.loadMethod("GhostScreenshot", Module.hostClassLoader);
+            if (cached != null) {
+                XposedBridge.hookMethod(cached, hook);
+                ModuleLog.line("(Instar | ScreenshotBlock): ✅ Hooked (dynamic check): " + cached.getDeclaringClass().getName() + "." + cached.getName());
+                FeatureStatusTracker.setHooked("GhostScreenshot");
+                return;
+            }
+        }
+
+        try {
+            // Step 1: Find class referencing "ScreenshotNotificationManager"
+            List<ClassData> classes = bridge.findClass(FindClass.create()
+                    .matcher(ClassMatcher.create().usingStrings("ScreenshotNotificationManager")));
+
+            if (classes.isEmpty()) {
+                ModuleLog.line("(Instar | ScreenshotBlock): ❌ No class found containing 'ScreenshotNotificationManager'");
+                return;
+            }
+
+            for (ClassData classData : classes) {
+                String className = classData.getName();
+
+                // Step 2: Find all methods in that class
+                List<MethodData> methods = bridge.findMethod(FindMethod.create()
+                        .matcher(MethodMatcher.create().declaredClass(className)));
+
+                for (MethodData method : methods) {
+                    ClassDataList paramTypes = method.getParamTypes();
+                    String returnType = String.valueOf(method.getReturnType());
+
+                    // Match: void method(long)
+                    if (returnType.contains("void") &&
+                            paramTypes.size() == 1 &&
+                            String.valueOf(paramTypes.get(0)).contains("long")) {
+
+                        try {
+                            Method targetMethod = method.getMethodInstance(Module.hostClassLoader);
+                            DexKitCache.saveMethod("GhostScreenshot", targetMethod);
+                            XposedBridge.hookMethod(targetMethod, hook);
+
+                            ModuleLog.line("(Instar | ScreenshotBlock): ✅ Hooked (dynamic check): " +
+                                    method.getClassName() + "." + method.getName());
+                            FeatureStatusTracker.setHooked("GhostScreenshot");
+                            return;
+
+                        } catch (Throwable e) {
+                            ModuleLog.line("(Instar | ScreenshotBlock): ❌ Hook error: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+
+        } catch (Throwable e) {
+            ModuleLog.line("(Instar | ScreenshotBlock): ❌ Exception: " + e.getMessage());
+        }
+    }
+}
