@@ -5,6 +5,7 @@ on:
     branches:
       - main  # Trigger workflow on pushes to the main branch
       - 0.4
+      - test/reels-ufi-count-hook
   pull_request:
     branches:
       - main  # Trigger workflow on pull requests to the main branch
