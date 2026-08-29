@@ -19,10 +19,12 @@ import com.cybr47.instar.utils.log.ModuleLog;
 public final class HideReelsUfiCountsHook {
 
     private static final String REELS_UFI_ID = "clips_ufi_component";
+    private static final String REELS_LIKE_ID = "like_button";
     private static final Map<View, Boolean> OBSERVED_CONTAINERS =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     private static volatile int reelsUfiId;
+    private static volatile int reelsLikeId;
 
     public void install() {
         hookTextBinding();
@@ -41,6 +43,7 @@ public final class HideReelsUfiCountsHook {
                             CharSequence text = (CharSequence) param.args[0];
                             if (!looksLikeCount(text) || !isInsideReelsUfi(view)) return;
                             param.args[0] = "";
+                            FeatureStatusTracker.setHooked("HideReelsUfiCounts");
                         }
 
                         @Override
@@ -65,17 +68,20 @@ public final class HideReelsUfiCountsHook {
                 protected void afterHookedMethod(MethodHookParam param) {
                     if (!FeatureFlags.hideReelsUfiCounts) return;
                     View view = (View) param.thisObject;
-                    cacheUfiId(view);
-                    if (reelsUfiId == 0 || view.getId() != reelsUfiId) return;
+                    cacheIds(view);
+                    boolean ufiRoot = reelsUfiId != 0 && view.getId() == reelsUfiId;
+                    boolean likeAnchor = reelsLikeId != 0 && view.getId() == reelsLikeId;
+                    if (!ufiRoot && !likeAnchor) return;
 
-                    clearCounts(view);
-                    if (OBSERVED_CONTAINERS.put(view, Boolean.TRUE) == null) {
-                        view.addOnLayoutChangeListener((v, left, top, right, bottom,
+                    View container = ufiRoot ? view : findLikelyUfiContainer(view);
+                    int cleared = clearCounts(container);
+                    if (OBSERVED_CONTAINERS.put(container, Boolean.TRUE) == null) {
+                        container.addOnLayoutChangeListener((v, left, top, right, bottom,
                                 oldLeft, oldTop, oldRight, oldBottom) -> {
                             if (FeatureFlags.hideReelsUfiCounts) clearCounts(v);
                         });
                     }
-                    FeatureStatusTracker.setHooked("HideReelsUfiCounts");
+                    if (cleared > 0) FeatureStatusTracker.setHooked("HideReelsUfiCounts");
                 }
             });
         } catch (Throwable error) {
@@ -83,35 +89,72 @@ public final class HideReelsUfiCountsHook {
         }
     }
 
-    private static void clearCounts(View view) {
+    private static int clearCounts(View view) {
         if (view instanceof TextView textView && looksLikeCount(textView.getText())) {
             textView.setText("");
             if (!hasCompoundDrawable(textView)) textView.setVisibility(View.GONE);
-            return;
+            return 1;
         }
+        int cleared = 0;
         if (view instanceof ViewGroup group) {
             for (int i = 0; i < group.getChildCount(); i++) {
-                clearCounts(group.getChildAt(i));
+                cleared += clearCounts(group.getChildAt(i));
             }
         }
+        return cleared;
     }
 
     private static boolean isInsideReelsUfi(View view) {
-        cacheUfiId(view);
-        if (reelsUfiId == 0) return false;
-        for (View current = view; current != null; ) {
-            if (current.getId() == reelsUfiId) return true;
+        cacheIds(view);
+        int depth = 0;
+        for (View current = view; current != null && depth++ < 6; ) {
+            if (reelsUfiId != 0 && current.getId() == reelsUfiId) return true;
+            if (reelsLikeId != 0 && current instanceof ViewGroup
+                    && current.findViewById(reelsLikeId) != null) return true;
             android.view.ViewParent parent = current.getParent();
             current = parent instanceof View ? (View) parent : null;
         }
         return false;
     }
 
-    private static void cacheUfiId(View view) {
-        if (reelsUfiId != 0 || view == null) return;
+    private static View findLikelyUfiContainer(View anchor) {
+        android.view.ViewParent immediateParent = anchor.getParent();
+        View fallback = immediateParent instanceof View ? (View) immediateParent : anchor;
+        int depth = 0;
+        for (View current = anchor; current != null && depth < 6; depth++) {
+            if (reelsUfiId != 0 && current.getId() == reelsUfiId) return current;
+            if (current instanceof ViewGroup && countNumericTexts(current, 0) >= 2) {
+                return current;
+            }
+            android.view.ViewParent parent = current.getParent();
+            current = parent instanceof View ? (View) parent : null;
+        }
+        return fallback;
+    }
+
+    private static int countNumericTexts(View view, int depth) {
+        if (depth > 5) return 0;
+        if (view instanceof TextView textView) return looksLikeCount(textView.getText()) ? 1 : 0;
+        int count = 0;
+        if (view instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount() && count < 2; i++) {
+                count += countNumericTexts(group.getChildAt(i), depth + 1);
+            }
+        }
+        return count;
+    }
+
+    private static void cacheIds(View view) {
+        if ((reelsUfiId != 0 && reelsLikeId != 0) || view == null) return;
         try {
-            reelsUfiId = view.getResources().getIdentifier(
-                    REELS_UFI_ID, "id", view.getContext().getPackageName());
+            if (reelsUfiId == 0) {
+                reelsUfiId = view.getResources().getIdentifier(
+                        REELS_UFI_ID, "id", view.getContext().getPackageName());
+            }
+            if (reelsLikeId == 0) {
+                reelsLikeId = view.getResources().getIdentifier(
+                        REELS_LIKE_ID, "id", view.getContext().getPackageName());
+            }
         } catch (Throwable ignored) {
         }
     }

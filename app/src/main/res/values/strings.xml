@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- app wide -->
     <string name="app_name">Instar</string>
-    <string name="version" translatable="false">v0.1.0-alpha01</string>
+    <string name="version" translatable="false">v0.1.0-alpha02</string>
     <string name="home">Home</string>
     <string name="features">Features</string>
     <string name="help">Help</string>
@@ -141,7 +141,7 @@
     <!-- ================================================================ -->
 
     <!-- Common -->
-    <string name="ig_dialog_title" translatable="false">Instar 🌘</string>
+    <string name="ig_dialog_title" translatable="false">Instar 💫</string>
     <string name="ig_dialog_close">Close</string>
     <string name="ig_dialog_enable_disable_all">Enable/Disable All</string>
     <string name="ig_dialog_error">Error</string>
@@ -246,6 +246,8 @@
     <!-- Developer options -->
     <string name="ig_dialog_dev_enable">Enable Developer Mode</string>
     <string name="ig_dialog_dev_import">Import Dev Config</string>
+    <string name="ig_dialog_dev_import_mapping">Import MetaConfig Mapping</string>
+    <string name="ig_dialog_dev_download_mapping">Download MetaConfig Mapping</string>
     <string name="ig_dialog_dev_export">Export Dev Config</string>
     <string name="ig_dialog_dev_restore_default_config">Restore to Default Config</string>
     <string name="ig_dialog_dev_restore_default_config_confirm">This will overwrite the current Developer Config with the bundled default. Continue?</string>
@@ -268,6 +270,13 @@
 
     <!-- JsonImportActivity -->
     <string name="json_select_config">Select JSON Config</string>
+    <string name="json_select_mapping">Select MetaConfig Mapping JSON</string>
+    <string name="ig_mapping_request_sent">Mapping download requested. Keep Instagram open.</string>
+    <string name="ig_mapping_download_in_progress">A MetaConfig mapping download is already running.</string>
+    <string name="ig_mapping_download_success">Installed MetaConfig mapping for Instagram %1$s.</string>
+    <string name="ig_mapping_download_failed">Could not download MetaConfig mapping: %1$s</string>
+    <string name="ig_mapping_import_success">MetaConfig mapping imported.</string>
+    <string name="ig_mapping_import_failed">Could not import MetaConfig mapping: %1$s</string>
     <string name="json_target_not_specified">❌ Target package not specified.</string>
     <string name="json_sent">✅ Sent to Instagram.</string>
     <string name="json_not_valid">❌ Not a valid JSON file.</string>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Density-independent complete icon supplied for Instar. Gradient requires API 24+. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path android:pathData="M28,4H80C93.255,4 104,14.745 104,28V80C104,93.255 93.255,104 80,104H28C14.745,104 4,93.255 4,80V28C4,14.745 14.745,4 28,4Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="28"
+                android:centerY="108"
+                android:gradientRadius="132"
+                android:type="radial">
+                <item android:color="#FFFFD600" android:offset="0.00" />
+                <item android:color="#FFFF7A00" android:offset="0.22" />
+                <item android:color="#FFFF0069" android:offset="0.48" />
+                <item android:color="#FFD300C5" android:offset="0.73" />
+                <item android:color="#FF7638FA" android:offset="1.00" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <path
+        android:pathData="M40,21H68C78.493,21 87,29.507 87,40V68C87,78.493 78.493,87 68,87H40C29.507,87 21,78.493 21,68V40C21,29.507 29.507,21 40,21Z"
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M54,37.5L59.555,47.355L70.643,49.592L62.75,57.843L64.286,69.158L54,64.2L43.714,69.158L45.25,57.843L37.357,49.592L48.445,47.355Z"
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M78.5,34.5A4.5,4.5 0,1 1,69.5 34.5A4.5,4.5 0,1 1,78.5 34.5"
+        android:fillColor="#FFFFFFFF" />
+</vector>

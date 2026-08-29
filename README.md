@@ -20,9 +20,12 @@ Instar fails closed: it registers no functional Instagram hooks when the install
 - `Hide Notes tray` and `Hide Stories tray`.
 - `Disable Reels scrolling`.
 - Instagram Experimental Settings unlock, exposed through Instagram's native long-press Home gesture when Developer Options is enabled. Instar combines the structural InstaEclipse employee-gate hook with Instagram 435's `28538::0` employee-options flag.
+- Piko-compatible MetaConfig mapping import and version-matched automatic mapping repair under Developer Options.
 - Instar settings remain available by long-pressing Search.
 
-The Reel UFI implementation is hybrid. Instagram 435 has native MobileConfig flags for hiding Reel like and repost counts; it does not expose equivalent mapped flags for comment, share, or save counts. Instar enables the native flags and applies a narrowly scoped fallback to numeric labels inside `clips_ufi_component`.
+The Reel UFI implementation is hybrid. Instagram 435 has native MobileConfig flags for hiding Reel like and repost counts; it does not expose equivalent mapped flags for comment, share, or save counts. Instar enables the native flags through Piko's wrapper-accessor path and applies a narrowly scoped UI fallback anchored to `clips_ufi_component` or `like_button`.
+
+If Instagram's `files/mobileconfig/id_name_mapping.json` is missing or is an empty stub, Instar downloads the mapping that exactly matches the installed Instagram version from Piko's mapping repository. Developer Options also provides manual Import and Download actions. Imported files are validated before an atomic replacement.
 
 Instar does not inject Piko Settings or More Profile Options buttons into the profile page. A Miscellaneous `Profile quick actions` toggle adds Copy username to a long-press on the profile picture and can share that gesture with InstaEclipse's profile-picture downloader. Full name, bio, and internal user ID actions are tracked for later validation.
 

@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- app wide -->
     <string name="app_name">Instar</string>
-    <string name="version" translatable="false">v0.1.0-alpha01</string>
+    <string name="version" translatable="false">v0.1.0-alpha02</string>
     <string name="home">Menu</string>
     <string name="features">Fonctionnalités</string>
     <string name="help">Aide</string>
@@ -132,7 +132,7 @@
     <!-- ================================================================ -->
 
     <!-- Common -->
-    <string name="ig_dialog_title" translatable="false">Instar 🌘</string>
+    <string name="ig_dialog_title" translatable="false">Instar 💫</string>
     <string name="ig_dialog_close">Fermer</string>
     <string name="ig_dialog_enable_disable_all">Activer/Désactiver Tous</string>
     <string name="ig_dialog_error">Erreur</string>

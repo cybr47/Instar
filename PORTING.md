@@ -7,11 +7,12 @@ Baseline: Instagram `435.0.0.37.76`.
 | Hide repost button | Included | Runtime equivalent of Piko's media-notes gate plus InstaEclipse's request block |
 | Hide Reel like count | Included | Native MobileConfig `47643::3` |
 | Hide Reel repost count | Included | Native MobileConfig `75216::1` and `75216::2` |
-| Hide Reel comment/share/save counts | Included, needs device validation | Numeric-label fallback scoped to `clips_ufi_component` |
+| Hide Reel comment/share/save counts | Included, needs device validation | Numeric-label fallback scoped through `clips_ufi_component` and `like_button` |
 | Hide Notes tray | Included, needs device validation | Resource anchor `cf_hub_recycler_view` |
 | Hide Stories tray | Included, needs device validation | Resource anchors `litho_main_feed_stories_tray` and `floating_tray_spacer` |
 | Disable Reels scrolling | Included, needs device validation | DexKit anchor plus ViewPager2 input disable |
 | Experimental Settings via Home | Included, needs device validation | Structural employee gate plus MobileConfig `28538::0` |
+| MetaConfig mapping import/repair | Included | Piko-compatible JSON import and exact-version automatic download |
 | Piko Settings profile button | Excluded | Instar uses long-press Search |
 | More Profile Options button | Excluded | No profile-page launcher UI is injected |
 | Copy profile username | Included | Miscellaneous quick-action menu on profile-picture long press |

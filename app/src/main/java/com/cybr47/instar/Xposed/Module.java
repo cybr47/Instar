@@ -69,6 +69,7 @@ import com.cybr47.instar.utils.feature.FeatureFlags;
 import com.cybr47.instar.utils.feature.FeatureManager;
 import com.cybr47.instar.utils.log.ModuleLog;
 import com.cybr47.instar.utils.compat.InstagramCompatibility;
+import com.cybr47.instar.mods.devops.config.MappingManager;
 
 
 @SuppressLint("UnsafeDynamicallyLoadedCode")
@@ -195,6 +196,7 @@ public class Module implements IXposedHookLoadPackage, IXposedHookZygoteInit {
                     } catch (Throwable e) {
                         ModuleLog.line("(Instar | ImportReceiver): ❌ " + e.getMessage());
                     }
+                    MappingManager.ensureMappingAsync(context);
                     try {
                         UIHookManager.registerSettingsRestoreReceiver(context);
                     } catch (Throwable e) {

@@ -17,6 +17,8 @@ public class JsonImportActivity extends Activity {
 
     private static final int PICK_JSON_FILE = 1234;
     static final String ACTION_IMPORT_CONFIG = "com.cybr47.instar.ACTION_IMPORT_CONFIG";
+    public static final String EXTRA_IMPORT_TYPE = "import_type";
+    public static final String IMPORT_TYPE_MAPPING = "mapping";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +26,8 @@ public class JsonImportActivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("application/json");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        startActivityForResult(Intent.createChooser(intent, getString(R.string.json_select_config)), PICK_JSON_FILE);
+        int title = isMappingImport() ? R.string.json_select_mapping : R.string.json_select_config;
+        startActivityForResult(Intent.createChooser(intent, getString(title)), PICK_JSON_FILE);
     }
 
     @Override
@@ -34,13 +37,21 @@ public class JsonImportActivity extends Activity {
                 Uri uri = data.getData();
                 try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
                     String json = readStream(inputStream).trim();
-                    if (json.startsWith("{") && json.endsWith("}")) {
+                    boolean mappingImport = isMappingImport();
+                    boolean validEnvelope = mappingImport
+                            ? json.startsWith("[") && json.endsWith("]")
+                            : json.startsWith("{") && json.endsWith("}");
+                    if (validEnvelope) {
                         String targetPackage = getIntent().getStringExtra("target_package");
                         if (targetPackage == null || targetPackage.isEmpty()) {
                             Toast.makeText(this, getString(R.string.json_target_not_specified), Toast.LENGTH_LONG).show();
                         } else {
                             String action = getIntent().getStringExtra("broadcast_action");
-                            if (action == null || action.isEmpty()) action = ACTION_IMPORT_CONFIG;
+                            if (action == null || action.isEmpty()) {
+                                action = mappingImport
+                                        ? MappingManager.ACTION_IMPORT_MAPPING
+                                        : ACTION_IMPORT_CONFIG;
+                            }
                             Intent broadcast = new Intent(action);
                             broadcast.setPackage(targetPackage);
                             broadcast.putExtra("json_content", json);
@@ -58,6 +69,10 @@ public class JsonImportActivity extends Activity {
             }
         }
         finish();
+    }
+
+    private boolean isMappingImport() {
+        return IMPORT_TYPE_MAPPING.equals(getIntent().getStringExtra(EXTRA_IMPORT_TYPE));
     }
 
     @SuppressLint("NewApi")

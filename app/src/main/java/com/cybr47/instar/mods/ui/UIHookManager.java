@@ -26,6 +26,7 @@ import de.robv.android.xposed.XposedHelpers;
 import com.cybr47.instar.R;
 import com.cybr47.instar.Xposed.Module;
 import com.cybr47.instar.mods.devops.config.ConfigManager;
+import com.cybr47.instar.mods.devops.config.MappingManager;
 import com.cybr47.instar.mods.ui.utils.BottomSheetHookUtil;
 import com.cybr47.instar.mods.ui.utils.VibrationUtil;
 import com.cybr47.instar.utils.core.SettingsManager;
@@ -326,20 +327,28 @@ public class UIHookManager {
         BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(android.content.Context ctx, Intent intent) {
+                if (MappingManager.ACTION_DOWNLOAD_MAPPING.equals(intent.getAction())) {
+                    MappingManager.downloadMappingAsync(ctx, true);
+                    return;
+                }
                 String json = intent.getStringExtra("json_content");
                 if (json != null && !json.isEmpty()) {
-                    ConfigManager.importConfigFromJson(ctx, json);
+                    if (MappingManager.ACTION_IMPORT_MAPPING.equals(intent.getAction())) {
+                        MappingManager.importMappingFromJson(ctx, json);
+                    } else {
+                        ConfigManager.importConfigFromJson(ctx, json);
+                    }
                 }
             }
         };
+        IntentFilter filter = new IntentFilter("com.cybr47.instar.ACTION_IMPORT_CONFIG");
+        filter.addAction(MappingManager.ACTION_IMPORT_MAPPING);
+        filter.addAction(MappingManager.ACTION_DOWNLOAD_MAPPING);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(receiver,
-                    new IntentFilter("com.cybr47.instar.ACTION_IMPORT_CONFIG"),
+            context.registerReceiver(receiver, filter,
                     android.content.Context.RECEIVER_EXPORTED);
         } else {
-            androidx.core.content.ContextCompat.registerReceiver(context,
-                    receiver,
-                    new IntentFilter("com.cybr47.instar.ACTION_IMPORT_CONFIG"),
+            androidx.core.content.ContextCompat.registerReceiver(context, receiver, filter,
                     androidx.core.content.ContextCompat.RECEIVER_EXPORTED);
         }
     }

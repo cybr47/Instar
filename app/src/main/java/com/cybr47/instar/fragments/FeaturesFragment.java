@@ -54,6 +54,8 @@ import java.util.Map;
 import java.util.Scanner;
 
 import com.cybr47.instar.R;
+import com.cybr47.instar.mods.devops.config.JsonImportActivity;
+import com.cybr47.instar.mods.devops.config.MappingManager;
 import com.cybr47.instar.mods.location.LocationPickerActivity;
 import com.cybr47.instar.ui.theme.ThemeCustomizerActivity;
 
@@ -723,6 +725,8 @@ public class FeaturesFragment extends Fragment {
         defs.add(getString(R.string.feat_config));
         defs.add(Arrays.asList(
                 createClickable(R.drawable.ic_download, "#30D158", getString(R.string.ig_dialog_dev_import), this::importDevConfig),
+                createClickable(R.drawable.ic_folder, "#BF5AF2", getString(R.string.ig_dialog_dev_import_mapping), this::importMapping),
+                createClickable(R.drawable.ic_download, "#64D2FF", getString(R.string.ig_dialog_dev_download_mapping), this::downloadMapping),
                 createClickable(R.drawable.ic_upload, "#0A84FF", getString(R.string.ig_dialog_dev_export), this::exportDevConfig),
                 createClickable(R.drawable.ic_restart, "#FF9F0A", getString(R.string.ig_dialog_dev_restore_default_config), this::restoreDefaultConfig)
         ));
@@ -1123,6 +1127,25 @@ public class FeaturesFragment extends Fragment {
         importIntent.setComponent(new ComponentName(requireContext(), "com.cybr47.instar.mods.devops.config.JsonImportActivity"));
         importIntent.putExtra("target_package", "com.instagram.android");
         startActivity(importIntent);
+    }
+
+    private void importMapping() {
+        Intent importIntent = new Intent();
+        importIntent.setComponent(new ComponentName(requireContext(),
+                "com.cybr47.instar.mods.devops.config.JsonImportActivity"));
+        importIntent.putExtra("target_package", "com.instagram.android");
+        importIntent.putExtra("broadcast_action", MappingManager.ACTION_IMPORT_MAPPING);
+        importIntent.putExtra(JsonImportActivity.EXTRA_IMPORT_TYPE,
+                JsonImportActivity.IMPORT_TYPE_MAPPING);
+        startActivity(importIntent);
+    }
+
+    private void downloadMapping() {
+        Intent request = new Intent(MappingManager.ACTION_DOWNLOAD_MAPPING);
+        request.setPackage("com.instagram.android");
+        requireContext().sendBroadcast(request);
+        Toast.makeText(requireContext(), getString(R.string.ig_mapping_request_sent),
+                Toast.LENGTH_SHORT).show();
     }
 
     private void exportDevConfig() {

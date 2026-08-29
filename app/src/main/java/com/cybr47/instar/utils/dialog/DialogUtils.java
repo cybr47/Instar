@@ -33,6 +33,8 @@ import de.robv.android.xposed.XposedBridge;
 import com.cybr47.instar.R;
 import com.cybr47.instar.Xposed.Module;
 import com.cybr47.instar.mods.devops.config.ConfigManager;
+import com.cybr47.instar.mods.devops.config.JsonImportActivity;
+import com.cybr47.instar.mods.devops.config.MappingManager;
 import com.cybr47.instar.mods.ghost.ui.GhostEmojiManager;
 import com.cybr47.instar.mods.location.LocationPickerActivity;
 import com.cybr47.instar.mods.ui.UIHookManager;
@@ -446,6 +448,34 @@ public class DialogUtils {
                 showSimpleDialog(context, I18n.t(context, R.string.ig_dialog_error), I18n.t(context, R.string.ig_dialog_instagram_not_ready));
             }
         }));
+
+        layout.addView(createActionRow(context, R.drawable.ic_folder,
+                I18n.t(context, R.string.ig_dialog_dev_import_mapping), "#BF5AF2", v -> {
+            Activity instagramActivity = UIHookManager.getCurrentActivity();
+            if (instagramActivity != null && !instagramActivity.isFinishing()) {
+                Intent importIntent = new Intent();
+                importIntent.setComponent(new ComponentName("com.cybr47.instar",
+                        "com.cybr47.instar.mods.devops.config.JsonImportActivity"));
+                importIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                importIntent.putExtra("target_package", context.getPackageName());
+                importIntent.putExtra("broadcast_action", MappingManager.ACTION_IMPORT_MAPPING);
+                importIntent.putExtra(JsonImportActivity.EXTRA_IMPORT_TYPE,
+                        JsonImportActivity.IMPORT_TYPE_MAPPING);
+                try {
+                    instagramActivity.startActivity(importIntent);
+                } catch (Exception e) {
+                    showSimpleDialog(context, I18n.t(context, R.string.ig_dialog_error),
+                            I18n.t(context, R.string.ig_dialog_unable_open_ui));
+                }
+            } else {
+                showSimpleDialog(context, I18n.t(context, R.string.ig_dialog_error),
+                        I18n.t(context, R.string.ig_dialog_instagram_not_ready));
+            }
+        }));
+
+        layout.addView(createActionRow(context, R.drawable.ic_download,
+                I18n.t(context, R.string.ig_dialog_dev_download_mapping), "#64D2FF",
+                v -> MappingManager.downloadMappingAsync(context, true)));
 
         layout.addView(createActionRow(context, R.drawable.ic_upload, I18n.t(context, R.string.ig_dialog_dev_export), "#0A84FF", v -> {
             Activity instagramActivity = UIHookManager.getCurrentActivity();

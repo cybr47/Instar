@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import de.robv.android.xposed.XC_MethodHook;
@@ -29,6 +30,7 @@ public final class MobileConfigOverrideHook {
     private static final String MOBILE_CONFIG_CLASS =
             "com.facebook.mobileconfig.factory.MobileConfigUnsafeContext";
     private static final String UNIVERSAL_ID_HELPER_CLASS = "X.0B3D";
+    private static final String CONFIG_WRAPPER_ANCHOR = "__fbt_null__";
 
     // Instagram 435 MetaConfig IDs from Piko's generated mapping.
     private static final String HIDE_REELS_LIKE_COUNTS = "47643::3";
@@ -38,6 +40,7 @@ public final class MobileConfigOverrideHook {
 
     private static final String NO_OVERRIDE = "-";
     private static final Map<Long, String> SPECIFIER_CACHE = new ConcurrentHashMap<>();
+    private static final Set<String> HOOKED_METHODS = ConcurrentHashMap.newKeySet();
 
     private Method universalIdMethod;
 
@@ -49,47 +52,115 @@ public final class MobileConfigOverrideHook {
                 return;
             }
 
+            int hooked = hookPikoAccessorPath(bridge, classLoader);
+
+            // Keep the raw MobileConfigUnsafeContext lookup as a compatibility fallback.
             List<MethodData> getters = bridge.findMethod(FindMethod.create()
                     .matcher(MethodMatcher.create()
                             .declaredClass(MOBILE_CONFIG_CLASS)
                             .returnType("boolean")
                             .paramTypes("long")));
 
-            int hooked = 0;
             for (MethodData getter : getters) {
                 try {
                     Method method = getter.getMethodInstance(classLoader);
-                    method.setAccessible(true);
-                    XposedBridge.hookMethod(method, new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            if (param.args.length == 0) return;
-                            Object raw = param.args[0];
-                            if (!(raw instanceof Long)) return;
-
-                            String configId = configId((Long) raw);
-                            if (FeatureFlags.isDevEnabled && EMPLOYEE_OPTIONS_ENABLED.equals(configId)) {
-                                param.setResult(true);
-                                FeatureStatusTracker.setHooked("DevOptions");
-                            } else if (FeatureFlags.hideReelsUfiCounts
-                                    && (HIDE_REELS_LIKE_COUNTS.equals(configId)
-                                    || HIDE_RESHARE_COUNTS_PRODUCTION.equals(configId)
-                                    || HIDE_RESHARE_COUNTS_CONSUMPTION.equals(configId))) {
-                                param.setResult(true);
-                                FeatureStatusTracker.setHooked("HideReelsUfiCounts");
-                            }
-                        }
-                    });
-                    hooked++;
+                    if (hookBooleanAccessor(method)) hooked++;
                 } catch (Throwable error) {
                     ModuleLog.line("(Instar | MobileConfig): Getter hook failed: " + error.getMessage());
                 }
             }
 
-            ModuleLog.line("(Instar | MobileConfig): Hooked " + hooked + " boolean getter(s)");
+            ModuleLog.line("(Instar | MobileConfig): Hooked " + hooked
+                    + " boolean accessor(s), including Piko wrapper path");
         } catch (Throwable error) {
             ModuleLog.line("(Instar | MobileConfig): Install failed: " + error.getMessage());
         }
+    }
+
+    /**
+     * Instagram 435 reads most flags through an obfuscated three-argument wrapper rather than
+     * calling MobileConfigUnsafeContext directly. Piko identifies its owner through the stable
+     * __fbt_null__ string; mirroring that path makes both Developer Options and native UFI flags
+     * work under LSPosed as well as LSPatch.
+     */
+    private int hookPikoAccessorPath(DexKitBridge bridge, ClassLoader classLoader) {
+        int hooked = 0;
+        try {
+            List<MethodData> anchors = bridge.findMethod(FindMethod.create()
+                    .matcher(MethodMatcher.create().usingStrings(CONFIG_WRAPPER_ANCHOR)));
+            for (MethodData anchor : anchors) {
+                try {
+                    Method anchorMethod = anchor.getMethodInstance(classLoader);
+                    Class<?>[] anchorParams = anchorMethod.getParameterTypes();
+                    if (anchorParams.length == 0) continue;
+                    Class<?> wrapperType = anchorParams[0];
+
+                    for (Method candidate : anchorMethod.getDeclaringClass().getDeclaredMethods()) {
+                        Class<?>[] params = candidate.getParameterTypes();
+                        if (candidate.getReturnType() != boolean.class
+                                || params.length != 3 || params[0] != wrapperType
+                                || !containsLong(params)) {
+                            continue;
+                        }
+                        if (hookBooleanAccessor(candidate)) hooked++;
+                    }
+                } catch (Throwable error) {
+                    ModuleLog.line("(Instar | MobileConfig): Wrapper candidate failed: "
+                            + error.getMessage());
+                }
+            }
+        } catch (Throwable error) {
+            ModuleLog.line("(Instar | MobileConfig): Wrapper discovery failed: "
+                    + error.getMessage());
+        }
+        return hooked;
+    }
+
+    private boolean hookBooleanAccessor(Method method) {
+        String signature = method.toGenericString();
+        if (!HOOKED_METHODS.add(signature)) return false;
+        try {
+            method.setAccessible(true);
+            XposedBridge.hookMethod(method, new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) {
+                    for (Object argument : param.args) {
+                        if (!(argument instanceof Long)) continue;
+                        if (applyOverride(param, (Long) argument)) return;
+                    }
+                }
+            });
+            return true;
+        } catch (Throwable error) {
+            HOOKED_METHODS.remove(signature);
+            ModuleLog.line("(Instar | MobileConfig): Accessor hook failed: "
+                    + error.getMessage());
+            return false;
+        }
+    }
+
+    private boolean applyOverride(XC_MethodHook.MethodHookParam param, long specifier) {
+        String configId = configId(specifier);
+        if (FeatureFlags.isDevEnabled && EMPLOYEE_OPTIONS_ENABLED.equals(configId)) {
+            param.setResult(true);
+            FeatureStatusTracker.setHooked("DevOptions");
+            return true;
+        } else if (FeatureFlags.hideReelsUfiCounts
+                && (HIDE_REELS_LIKE_COUNTS.equals(configId)
+                || HIDE_RESHARE_COUNTS_PRODUCTION.equals(configId)
+                || HIDE_RESHARE_COUNTS_CONSUMPTION.equals(configId))) {
+            param.setResult(true);
+            FeatureStatusTracker.setHooked("HideReelsUfiCounts");
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean containsLong(Class<?>[] parameterTypes) {
+        for (Class<?> parameterType : parameterTypes) {
+            if (parameterType == long.class || parameterType == Long.class) return true;
+        }
+        return false;
     }
 
     private Method resolveUniversalIdMethod(ClassLoader classLoader) {
