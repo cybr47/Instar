@@ -29,8 +29,7 @@
                 android:contentDescription="App Logo"
                 android:paddingEnd="7dp"
                 android:adjustViewBounds="true"
-                android:scaleType="fitCenter"
-                app:tint="?attr/colorPrimary" />
+                android:scaleType="fitCenter" />
 
             <TextView
                 android:id="@+id/toolbar_title_name"
