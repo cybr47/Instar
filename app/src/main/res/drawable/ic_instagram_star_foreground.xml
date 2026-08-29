@@ -1,27 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- White Instar glyph kept inside the adaptive icon's 66dp safe zone. -->
+<!-- White camera-and-star foreground for the adaptive launcher icon. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
     <path
         android:pathData="M40,21H68C78.493,21 87,29.507 87,40V68C87,78.493 78.493,87 68,87H40C29.507,87 21,78.493 21,68V40C21,29.507 29.507,21 40,21Z"
-        android:fillColor="@android:color/transparent"
+        android:fillColor="#00000000"
         android:strokeColor="#FFFFFFFF"
         android:strokeWidth="6.4"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
-
     <path
         android:pathData="M54,37.5L59.555,47.355L70.643,49.592L62.75,57.843L64.286,69.158L54,64.2L43.714,69.158L45.25,57.843L37.357,49.592L48.445,47.355Z"
-        android:fillColor="@android:color/transparent"
+        android:fillColor="#00000000"
         android:strokeColor="#FFFFFFFF"
         android:strokeWidth="6.4"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
-
     <path
         android:pathData="M78.5,34.5A4.5,4.5 0,1 1,69.5 34.5A4.5,4.5 0,1 1,78.5 34.5"
         android:fillColor="#FFFFFFFF" />
